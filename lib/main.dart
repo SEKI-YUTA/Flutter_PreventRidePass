@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:prevent_ride_pass/map_screen.dart';
+import 'package:prevent_ride_pass/setting_screen.dart';
 import 'util/AppUtil.dart';
 
 void main() {
@@ -23,58 +25,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
-  }
-}
-
 class MyMapWidget extends StatefulWidget {
   const MyMapWidget({super.key});
 
@@ -83,64 +33,61 @@ class MyMapWidget extends StatefulWidget {
 }
 
 class _MyMapWidgetState extends State<MyMapWidget> {
-  MapController controller = MapController.withPosition(
-    initPosition: GeoPoint(
-      latitude: 47.4358055,
-      longitude: 8.4737324,
-    ),
-    areaLimit: BoundingBox(
-      east: 10.4922941,
-      north: 47.8084648,
-      south: 45.817995,
-      west: 5.9559113,
-    ),
-  );
+  static const _tabList = [MapScreen(), SettingScreen()];
+  int _tabIndex = 0;
+  bool _locationAddBtnShown = false;
+  void _tabTapped(int index) {
+    setState(() {
+      _tabIndex = index;
+    });
+  }
+
+  void _toggleLocationBtnShow(bool? state) {
+    if (state != null) {
+      _locationAddBtnShown = state!;
+    } else {
+      _locationAddBtnShown = !_locationAddBtnShown;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Fluttertoast.showToast(msg: "通知を出す処理");
-          AppUtil.notify();
-        },
-        child: const Icon(Icons.send),
-      ),
-      body: Center(
-        child: OSMFlutter(
-          controller: controller,
-          trackMyPosition: false,
-          initZoom: 12,
-          minZoomLevel: 8,
-          maxZoomLevel: 14,
-          stepZoom: 1.0,
-          userLocationMarker: UserLocationMaker(
-            personMarker: MarkerIcon(
-              icon: Icon(
-                Icons.location_history_rounded,
-                color: Colors.red,
-                size: 48,
-              ),
-            ),
-            directionArrowMarker: MarkerIcon(
-              icon: Icon(
-                Icons.double_arrow,
-                size: 48,
-              ),
-            ),
-          ),
-          roadConfiguration: RoadOption(
-            roadColor: Colors.yellowAccent,
-          ),
-          markerOption: MarkerOption(
-              defaultMarker: MarkerIcon(
-            icon: Icon(
-              Icons.person_pin_circle,
-              color: Colors.blue,
-              size: 56,
-            ),
-          )),
+        appBar: AppBar(
+          actions: [
+            IconButton(
+                onPressed: () {
+                  Fluttertoast.showToast(msg: "位置を追加");
+                  _toggleLocationBtnShow(null);
+                  _tabIndex = 0;
+                  setState(() {});
+                },
+                icon: const Icon(Icons.add)),
+            IconButton(
+                onPressed: () {
+                  Fluttertoast.showToast(msg: "位置のリストを表示");
+                },
+                icon: const Icon(Icons.list))
+          ],
         ),
-      ),
-    );
+        floatingActionButton: Visibility(
+          visible: _locationAddBtnShown,
+          child: FloatingActionButton(
+            onPressed: () {
+              Fluttertoast.showToast(msg: "通知を出す処理");
+              AppUtil.notify();
+            },
+            child: const Icon(Icons.send),
+          ),
+        ),
+        bottomNavigationBar:
+            BottomNavigationBar(onTap: _tabTapped, items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: "地図"),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: "設定"),
+        ]),
+        body: IndexedStack(
+          index: _tabIndex,
+          children: _tabList,
+        ));
   }
 }

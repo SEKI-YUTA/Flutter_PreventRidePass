@@ -38,6 +38,7 @@ dependencies:
   flutter_osm_plugin: ^0.53.4
   fluttertoast: ^8.2.1
   flutter_local_notifications: ^13.0.0
+  geolocator: ^9.0.2
 
 dev_dependencies:
   flutter_test:
