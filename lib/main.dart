@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:prevent_ride_pass/location_list_screen.dart';
 import 'package:prevent_ride_pass/map_screen.dart';
 import 'package:prevent_ride_pass/setting_screen.dart';
 import 'util/AppUtil.dart';
@@ -66,6 +67,11 @@ class _MyMapWidgetState extends State<MyMapWidget> {
             IconButton(
                 onPressed: () {
                   Fluttertoast.showToast(msg: "位置のリストを表示");
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LocationListScreen(),
+                      ));
                 },
                 icon: const Icon(Icons.list))
           ],
@@ -74,8 +80,13 @@ class _MyMapWidgetState extends State<MyMapWidget> {
           visible: _locationAddBtnShown,
           child: FloatingActionButton(
             onPressed: () {
-              Fluttertoast.showToast(msg: "通知を出す処理");
-              AppUtil.notify();
+              if (_tabIndex == 0) {
+                Fluttertoast.showToast(msg: "通知を出す処理");
+                AppUtil.notify();
+              } else {
+                _tabIndex = 0;
+                setState(() {});
+              }
             },
             child: const Icon(Icons.send),
           ),
