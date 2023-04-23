@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:prevent_ride_pass/location_list_screen.dart';
 import 'package:prevent_ride_pass/map_screen.dart';

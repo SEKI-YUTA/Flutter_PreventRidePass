@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';
-import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:prevent_ride_pass/util/AppUtil.dart';
 
 class MapScreen extends StatefulWidget {
@@ -14,81 +18,120 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  Position? currentPosition = null;
-  MapController controller = MapController(
-    initMapWithUserPosition: false,
-    initPosition: GeoPoint(
-      latitude: 34.68244923950879,
-      longitude: 35.50301679852825,
-    ),
+  final LocationSettings locationSettings = const LocationSettings(
+    accuracy: LocationAccuracy.high,
+    distanceFilter: 10,
   );
+  Position? currentPos = null;
+  List<Marker> markerList = [];
   @override
   void initState() {
     super.initState();
     initialize();
-    // controller.currentLocation();
-    print("initState end");
+
+    StreamSubscription<Position> positionStream =
+        Geolocator.getPositionStream(locationSettings: locationSettings)
+            .listen((Position? position) {
+      print(position == null
+          ? 'Unknown'
+          : '${position.latitude.toString()}, ${position.longitude.toString()}');
+      if (position != null) {
+        currentPos = position;
+        setState(() {});
+      }
+    });
   }
 
   @override
   void dispose() {
     super.dispose();
-    controller.dispose();
+  }
+
+  Future<Position> _determinePosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return Future.error('Location services are disabled.');
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return Future.error('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+    return await Geolocator.getCurrentPosition();
   }
 
   Future<void> initialize() async {
-    var position = await AppUtil.getCurrentPosition();
-    // print("current location -------");
-    // print(position.latitude);
-    // print(position.longitude);
-    // print("current location ------- end");
-    // controller.changeLocation(
-    //     GeoPoint(latitude: position.latitude, longitude: position.longitude));
-    // controller.goToLocation(
-    //     GeoPoint(latitude: position.latitude, longitude: position.longitude));
-    controller.currentLocation();
-    // controller.getCurrentPositionAdvancedPositionPicker();
+    currentPos = await _determinePosition();
+    print("currentPos");
+    print(currentPos);
+    markerList.add(Marker(
+        point: LatLng(currentPos!.latitude, currentPos!.longitude),
+        builder: (context) => FlutterLogo()));
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: OSMFlutter(
-        isPicker: true,
-        controller: controller,
-        trackMyPosition: false,
-        initZoom: 18,
-        minZoomLevel: 2,
-        maxZoomLevel: 18,
-        onGeoPointClicked: (point) => {print("point" + point.toString())},
-        stepZoom: 1.0,
-        userLocationMarker: UserLocationMaker(
-          personMarker: MarkerIcon(
-            icon: Icon(
-              Icons.location_history_rounded,
-              color: Colors.red,
-              size: 48,
+      child: currentPos == null
+          ? const GettingPosWidget()
+          : FlutterMap(
+              options: MapOptions(
+                  onTap: (tapPosition, point) {
+                    Fluttertoast.showToast(
+                        msg: "lat: ${point.latitude} lon: ${point.longitude} ");
+                    addMarker(point);
+                  },
+                  center: LatLng(currentPos!.latitude, currentPos!.longitude),
+                  zoom: 14,
+                  interactiveFlags: InteractiveFlag.all,
+                  enableScrollWheel: true,
+                  scrollWheelVelocity: 0.00001),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                ),
+                MarkerLayer(
+                  markers: markerList,
+                )
+              ],
             ),
-          ),
-          directionArrowMarker: MarkerIcon(
-            icon: Icon(
-              Icons.double_arrow,
-              size: 48,
-            ),
-          ),
-        ),
-        roadConfiguration: RoadOption(
-          roadColor: Colors.yellowAccent,
-        ),
-        markerOption: MarkerOption(
-            defaultMarker: MarkerIcon(
-          icon: Icon(
-            Icons.person_pin_circle,
-            color: Colors.blue,
-            size: 56,
-          ),
-        )),
-      ),
+    );
+  }
+
+  void addMarker(LatLng markerPos) {
+    Marker marker = Marker(
+        point: markerPos,
+        builder: (context) => Container(
+              child: IconButton(
+                icon: Icon(Icons.location_on),
+                onPressed: () => print("pressed"),
+              ),
+            ));
+    markerList.add(marker);
+    setState(() {});
+  }
+}
+
+class GettingPosWidget extends StatelessWidget {
+  const GettingPosWidget({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [CircularProgressIndicator(), Text("位置情報取得中...")],
     );
   }
 }
