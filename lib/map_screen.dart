@@ -10,6 +10,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:prevent_ride_pass/LocationBloc.dart';
+import 'package:prevent_ride_pass/location_event.dart';
 import 'package:prevent_ride_pass/util/AppUtil.dart';
 
 class MapScreen extends StatefulWidget {

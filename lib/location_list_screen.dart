@@ -3,7 +3,7 @@ import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:prevent_ride_pass/LocationBloc.dart';
-import 'package:prevent_ride_pass/LocationState.dart';
+import 'package:prevent_ride_pass/location_state.dart';
 import 'package:prevent_ride_pass/model/Location.dart';
 import 'package:prevent_ride_pass/model/SavedLocation.dart';
 
@@ -29,7 +29,9 @@ class _LocationListScreenState extends State<LocationListScreen> {
           return Column(
             children: [
               Expanded(
-                  child: state.allLocations != null
+                  child: (state is AllLocationLoadedState ||
+                          (state.allLocations != null &&
+                              state.allLocations!.isNotEmpty))
                       ? ListView.builder(
                           itemCount: state.allLocations!.length,
                           itemBuilder: (context, index) {

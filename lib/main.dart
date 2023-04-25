@@ -5,7 +5,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:path/path.dart';
 import 'package:prevent_ride_pass/AppConstantValues.dart';
 import 'package:prevent_ride_pass/LocationBloc.dart';
-import 'package:prevent_ride_pass/LocationState.dart';
+import 'package:prevent_ride_pass/location_event.dart';
+import 'package:prevent_ride_pass/location_state.dart';
 import 'package:prevent_ride_pass/location_list_screen.dart';
 import 'package:prevent_ride_pass/map_screen.dart';
 import 'package:prevent_ride_pass/model/SavedLocation.dart';
@@ -32,7 +33,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<LocationBloc>(
-      create: (_) => LocationBloc(),
+      create: (_) => LocationBloc()..add(LoadAllLocation()),
       child: MaterialApp(
         title: 'Flutter Demo',
         theme: ThemeData(
@@ -95,9 +96,9 @@ class _MapAppRootState extends State<MapAppRoot> {
   @override
   Widget build(BuildContext context) {
     print("build");
-    context
-        .read<LocationBloc>()
-        .add(AddLocationToAllLocation(SavedLocation("AAA", 35.9999, 135.7777)));
+    // context
+    //     .read<LocationBloc>()
+    //     .add(AddLocationToAllLocation(SavedLocation("AAA", 35.9999, 135.7777)));
     // context.read<LocationBloc>().add(SetAllLocationEvent(allLocations));
     return BlocBuilder<LocationBloc, LocationState>(
       builder: (context, state) {
@@ -147,6 +148,9 @@ class _MapAppRootState extends State<MapAppRoot> {
                                     conflictAlgorithm:
                                         ConflictAlgorithm.replace);
                                 print("inserted: $id");
+                                Navigator.pop(context, true);
+                                context.read<LocationBloc>().add(
+                                    AddLocationToAllLocation(locationItem));
                               }
                             });
                           });

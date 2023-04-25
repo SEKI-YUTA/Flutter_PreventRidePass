@@ -14,8 +14,14 @@ class LocationState {
     this.allLocations = allLocations;
     this.activeLocatons = activeLocatons;
   }
+}
 
-  void test() {
-    allLocations!.add(SavedLocation("AA", 33, 55));
+class AllLocationLoadingState extends LocationState {}
+
+class AllLocationLoadedState extends LocationState {
+  AllLocationLoadedState(LocationState currentState, List<SavedLocation> list) {
+    this.pickedLocation = currentState.pickedLocation;
+    this.allLocations = list;
+    this.activeLocatons = currentState.activeLocatons;
   }
 }

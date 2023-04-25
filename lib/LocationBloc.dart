@@ -1,69 +1,64 @@
 import 'package:bloc/bloc.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:prevent_ride_pass/LocationState.dart';
+import 'package:prevent_ride_pass/location_state.dart';
+import 'package:prevent_ride_pass/location_event.dart';
 import 'package:prevent_ride_pass/model/SavedLocation.dart';
+import 'package:prevent_ride_pass/repository/LocationRepository.dart';
 
-abstract class LocationStateEvent {}
-
-class SetPickedLocationEvent extends LocationStateEvent {
-  LatLng location;
-  SetPickedLocationEvent(this.location);
-}
-
-class ResetPickedLocationEvent extends LocationStateEvent {}
-
-class GetAllLocationEvent extends LocationStateEvent {
-  GetAllLocationEvent();
-}
-
-class SetAllLocationEvent extends LocationStateEvent {
-  List<SavedLocation> allLocations;
-  SetAllLocationEvent(this.allLocations);
-}
-
-class AddLocationToAllLocation extends LocationStateEvent {
-  SavedLocation location;
-  AddLocationToAllLocation(this.location);
-}
-
-class ClearAllLocationEvent extends LocationStateEvent {}
-
-class SetActiveLocationListEvent extends LocationStateEvent {
-  List<SavedLocation> activeLocatons;
-  SetActiveLocationListEvent(this.activeLocatons);
-}
-
-class AddLocationToActiveLocationList extends LocationStateEvent {
-  SavedLocation location;
-  AddLocationToActiveLocationList(this.location);
-}
-
-class ClearActiveLocationListEvent extends LocationStateEvent {}
-
-class LocationBloc extends Bloc<LocationStateEvent, LocationState> {
+class LocationBloc extends Bloc<LocationEvent, LocationState> {
   LocationBloc() : super(LocationState()) {
     on<SetPickedLocationEvent>((event, emit) {
-      emit(LocationState(location: event.location));
+      print("pick len ${state.allLocations?.length} ");
+      emit(LocationState(
+          location: event.location,
+          allLocations: state.allLocations,
+          activeLocatons: state.activeLocatons));
     });
     on<ResetPickedLocationEvent>((event, emit) {
-      emit(LocationState(location: null));
+      emit(LocationState(
+          location: null,
+          allLocations: state.allLocations,
+          activeLocatons: state.activeLocatons));
+    });
+    on<LoadAllLocation>((event, emit) async {
+      emit(AllLocationLoadingState());
+
+      List<SavedLocation> allSavedLocation =
+          await LocationRepository().getAllSavedLocation();
+      emit(AllLocationLoadedState(state, allSavedLocation));
     });
     on<AddLocationToAllLocation>((event, emit) {
-      emit(
-          LocationState(allLocations: state.allLocations!.add(event.location)));
+      // print("add ${event.location.name}");
+      // print("len ${state.allLocations?.length}");
+      // print("len ${event.allLocations?.length}");
+      emit(LocationState(
+          location: state.pickedLocation,
+          allLocations: state.allLocations?..add(event.location),
+          activeLocatons: state.activeLocatons));
     });
-    on<GetAllLocationEvent>((event, emit) {});
     on<SetAllLocationEvent>((event, emit) {
-      emit(LocationState(allLocations: event.allLocations));
+      emit(LocationState(
+          location: state.pickedLocation,
+          allLocations: event.allLocations,
+          activeLocatons: state.activeLocatons));
     });
     on<ClearAllLocationEvent>((event, emit) {
-      emit(LocationState(allLocations: null));
+      emit(LocationState(
+          location: state.pickedLocation,
+          allLocations: null,
+          activeLocatons: state.activeLocatons));
     });
     on<SetActiveLocationListEvent>((event, emit) {
-      emit(LocationState(activeLocatons: event.activeLocatons));
+      emit(LocationState(
+          location: state.pickedLocation,
+          allLocations: state.allLocations,
+          activeLocatons: event.activeLocatons));
     });
     on<ClearActiveLocationListEvent>((event, emit) {
-      emit(LocationState(activeLocatons: null));
+      emit(LocationState(
+          location: state.pickedLocation,
+          allLocations: state.allLocations,
+          activeLocatons: null));
     });
   }
 
