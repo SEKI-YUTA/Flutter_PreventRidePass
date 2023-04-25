@@ -4,10 +4,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:prevent_ride_pass/LocationBloc.dart';
 import 'package:prevent_ride_pass/util/AppUtil.dart';
 
 class MapScreen extends StatefulWidget {
@@ -90,6 +92,9 @@ class _MapScreenState extends State<MapScreen> {
                   onTap: (tapPosition, point) {
                     Fluttertoast.showToast(
                         msg: "lat: ${point.latitude} lon: ${point.longitude} ");
+                    context
+                        .read<LocationBloc>()
+                        .add(SetPickedLocationEvent(point));
                     addMarker(point);
                   },
                   center: LatLng(currentPos!.latitude, currentPos!.longitude),
@@ -130,8 +135,15 @@ class GettingPosWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [CircularProgressIndicator(), Text("位置情報取得中...")],
+    return Expanded(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          CircularProgressIndicator(),
+          SizedBox(height: 16),
+          Text("位置情報取得中...")
+        ],
+      ),
     );
   }
 }

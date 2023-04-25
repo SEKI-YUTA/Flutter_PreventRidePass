@@ -1,9 +1,32 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:path/path.dart';
+import 'package:prevent_ride_pass/AppConstantValues.dart';
+import 'package:prevent_ride_pass/model/SavedLocation.dart';
+import 'package:sqflite/sqflite.dart';
 
 class AppUtil {
   static void demo() {
     print("demo");
+  }
+
+  static Future<Database> openAppDatabase() async {
+    return openDatabase(
+        join(await getDatabasesPath(), AppConstantValues.dbName),
+        onCreate: (db, version) {
+      return db.execute(
+          "CREATE TABLE ${SavedLocation.tableName}(${SavedLocation.columnId} INTEGER PRIMARY KEY AUTOINCREMENT," +
+              "${SavedLocation.columnName} TEXT, ${SavedLocation.columnLatitude} REAL, ${SavedLocation.columnLongitude} REAL)");
+    }, version: 1);
+  }
+
+  static Future<List<SavedLocation>> getSavedLocations(Database db) async {
+    final List<Map<String, dynamic>> maps =
+        await db.query(SavedLocation.tableName);
+    return List.generate(maps.length, (index) {
+      Map item = maps[index];
+      return SavedLocation.fromMap(item);
+    });
   }
 
   static Future<void> notify() {
