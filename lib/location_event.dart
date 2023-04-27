@@ -3,6 +3,13 @@ import 'package:prevent_ride_pass/model/SavedLocation.dart';
 
 abstract class LocationEvent {}
 
+class SetcenterLocationEvent extends LocationEvent {
+  LatLng center;
+  SetcenterLocationEvent(this.center);
+}
+
+class ResetCenterLocationEvent extends LocationEvent {}
+
 class SetPickedLocationEvent extends LocationEvent {
   LatLng location;
   SetPickedLocationEvent(this.location);

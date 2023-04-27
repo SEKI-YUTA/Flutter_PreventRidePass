@@ -7,15 +7,31 @@ import 'package:prevent_ride_pass/repository/LocationRepository.dart';
 
 class LocationBloc extends Bloc<LocationEvent, LocationState> {
   LocationBloc() : super(LocationState()) {
+    on<SetcenterLocationEvent>((event, emit) {
+      emit(LocationState(
+          center: event.center,
+          location: state.pickedLocation,
+          allLocations: state.allLocations,
+          activeLocatons: state.activeLocatons));
+    });
+    on<ResetCenterLocationEvent>((event, emit) {
+      emit(LocationState(
+          center: null,
+          location: state.pickedLocation,
+          allLocations: state.allLocations,
+          activeLocatons: state.activeLocatons));
+    });
     on<SetPickedLocationEvent>((event, emit) {
       print("pick len ${state.allLocations?.length} ");
       emit(LocationState(
+          center: state.center,
           location: event.location,
           allLocations: state.allLocations,
           activeLocatons: state.activeLocatons));
     });
     on<ResetPickedLocationEvent>((event, emit) {
       emit(LocationState(
+          center: state.center,
           location: null,
           allLocations: state.allLocations,
           activeLocatons: state.activeLocatons));
@@ -32,30 +48,35 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
       // print("len ${state.allLocations?.length}");
       // print("len ${event.allLocations?.length}");
       emit(LocationState(
+          center: state.center,
           location: state.pickedLocation,
           allLocations: state.allLocations?..add(event.location),
           activeLocatons: state.activeLocatons));
     });
     on<SetAllLocationEvent>((event, emit) {
       emit(LocationState(
+          center: state.center,
           location: state.pickedLocation,
           allLocations: event.allLocations,
           activeLocatons: state.activeLocatons));
     });
     on<ClearAllLocationEvent>((event, emit) {
       emit(LocationState(
+          center: state.center,
           location: state.pickedLocation,
           allLocations: null,
           activeLocatons: state.activeLocatons));
     });
     on<SetActiveLocationListEvent>((event, emit) {
       emit(LocationState(
+          center: state.center,
           location: state.pickedLocation,
           allLocations: state.allLocations,
           activeLocatons: event.activeLocatons));
     });
     on<ClearActiveLocationListEvent>((event, emit) {
       emit(LocationState(
+          center: state.center,
           location: state.pickedLocation,
           allLocations: state.allLocations,
           activeLocatons: null));

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:prevent_ride_pass/LocationBloc.dart';
+import 'package:prevent_ride_pass/location_event.dart';
 import 'package:prevent_ride_pass/location_state.dart';
 import 'package:prevent_ride_pass/model/Location.dart';
 import 'package:prevent_ride_pass/model/SavedLocation.dart';
@@ -40,6 +42,12 @@ class _LocationListScreenState extends State<LocationListScreen> {
                             return ListTile(
                               autofocus: false,
                               title: Text(location.name),
+                              onTap: () {
+                                context.read<LocationBloc>().add(
+                                    SetcenterLocationEvent(LatLng(
+                                        location.latitude,
+                                        location.longitude)));
+                              },
                               subtitle: Text(
                                   "緯度: ${location.latitude} 経度: ${location.longitude}"),
                             );

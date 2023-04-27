@@ -11,6 +11,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:prevent_ride_pass/LocationBloc.dart';
 import 'package:prevent_ride_pass/location_event.dart';
+import 'package:prevent_ride_pass/location_state.dart';
 import 'package:prevent_ride_pass/util/AppUtil.dart';
 
 class MapScreen extends StatefulWidget {
@@ -25,25 +26,19 @@ class _MapScreenState extends State<MapScreen> {
     accuracy: LocationAccuracy.best,
   );
   static MapController mapController = MapController();
-  // late final Liveal
   Position? currentPos = null;
-  LatLng? centerLatLng = null;
   List<Marker> markerList = [];
-  bool isMapRed = false;
+  late StreamSubscription<Position> positionStream;
+  bool isTracking = true;
   _MapScreenState() {
-    mapController = MapController();
-    centerLatLng = (currentPos == null
-        ? LatLng(34.71180537605096, 135.4975236351087)
-        : LatLng(currentPos!.latitude, currentPos!.longitude));
-    StreamSubscription<Position> positionStream =
+    positionStream =
         Geolocator.getPositionStream(locationSettings: locationSettings)
             .listen((Position? position) {
       print(position == null
           ? 'Unknown'
           : 'update ${position.latitude.toString()}, ${position.longitude.toString()}');
-      if (position != null) {
+      if (position != null && isTracking) {
         currentPos = position;
-        centerLatLng = LatLng(currentPos!.latitude, currentPos!.longitude);
         // mapController.move(centerLatLng!, mapController.zoom);
         setState(() {});
       }
@@ -51,6 +46,10 @@ class _MapScreenState extends State<MapScreen> {
         print("mapController is not itialized");
       } else {
         print("mapController is ialized");
+        Timer(const Duration(seconds: 1), () {
+          mapController.move(
+              LatLng(currentPos!.latitude, currentPos!.longitude), 16);
+        });
       }
     });
   }
@@ -58,7 +57,7 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     print("initState");
-    initialize();
+    // initialize();
 
     setState(() {});
   }
@@ -93,7 +92,6 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> initialize() async {
     currentPos = await _determinePosition();
-    centerLatLng = LatLng(currentPos!.latitude, currentPos!.longitude);
     print("currentPos");
     print(currentPos);
     // markerList.add();
@@ -103,61 +101,134 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: currentPos == null ? const GettingPosWidget() : MapWidget(context),
+        child:
+            currentPos == null ? const GettingPosWidget() : MapScreen(context));
+    // : TestMap());
+  }
+
+  SafeArea TestMap() {
+    return SafeArea(
+      child: Stack(
+        children: [
+          FlutterMap(
+            mapController: mapController,
+            options: MapOptions(
+                center: LatLng(34.70781811178657, 135.64362330253846),
+                zoom: 16,
+                interactiveFlags: InteractiveFlag.all,
+                enableScrollWheel: true,
+                scrollWheelVelocity: 0.00001),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.example.app',
+              ),
+            ],
+          ),
+          Positioned(
+            top: 200,
+            child: ElevatedButton(
+                onPressed: () {
+                  mapController.move(
+                      LatLng(34.261643510016484, 135.26069844559623), 16);
+                },
+                child: Text("AAA")),
+          ),
+        ],
+      ),
     );
   }
 
-  FlutterMap MapWidget(BuildContext context) {
-    return FlutterMap(
-      // keyを指定したら一応中心点は更新されるけど毎回のレンダリングが走ってしまう
-      // key: Key('map${currentPos!.latitude}${currentPos!.longitude}'),
-      mapController: mapController,
-      options: MapOptions(
-          keepAlive: true,
-          center: centerLatLng,
-          onPositionChanged: (pos, b) {
-            print("onPositionchanged");
-          },
-          onTap: (tapPosition, point) {
-            Fluttertoast.showToast(
-                msg: "lat: ${point.latitude} lon: ${point.longitude} ");
-            context.read<LocationBloc>().add(SetPickedLocationEvent(point));
-            addMarker(point);
-          },
-          // center: centerLatLng,
-          interactiveFlags: InteractiveFlag.all,
-          enableScrollWheel: true,
-          scrollWheelVelocity: 0.00001),
-      children: [
-        TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        ),
-        MarkerLayer(
-          markers: [
-            Marker(
-                point: LatLng(currentPos!.latitude, currentPos!.longitude),
-                builder: (context) => const FlutterLogo()),
-            Marker(
-                width: 60.0,
-                height: 60.0,
-                point: LatLng(currentPos!.latitude, currentPos!.longitude),
-                builder: (context) => Container(
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.accessibility,
-                            color: Colors.white),
-                        onPressed: () {
-                          print('Marker tapped!');
-                        },
-                      ),
-                    )),
-            ...markerList
+  Widget MapScreen(BuildContext context) {
+    return BlocBuilder<LocationBloc, LocationState>(
+      builder: (context, state) {
+        if (state.center != null) {
+          print("center is not null");
+          isTracking = false;
+          positionStream.pause();
+          mapController.move(
+              LatLng(state.center!.latitude, state.center!.longitude), 16);
+        }
+        return Stack(
+          children: [
+            FlutterMap(
+              // keyを指定したら一応中心点は更新されるけど毎回のレンダリングが走ってしまう
+              // key: Key('map${currentPos!.latitude}${currentPos!.longitude}'),
+              mapController: mapController,
+              options: MapOptions(
+                  keepAlive: true,
+                  // center: LatLng(34.70781811178657, 135.64362330253846),
+                  center: LatLng(currentPos!.latitude, currentPos!.longitude),
+                  onTap: (tapPosition, point) {
+                    Fluttertoast.showToast(
+                        msg: "lat: ${point.latitude} lon: ${point.longitude} ");
+                    context
+                        .read<LocationBloc>()
+                        .add(SetPickedLocationEvent(point));
+                    addMarker(point);
+                  },
+                  // center: centerLatLng,
+                  interactiveFlags: InteractiveFlag.all,
+                  enableScrollWheel: true,
+                  scrollWheelVelocity: 0.00001),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                        point:
+                            LatLng(currentPos!.latitude, currentPos!.longitude),
+                        builder: (context) => const FlutterLogo()),
+                    Marker(
+                        width: 60.0,
+                        height: 60.0,
+                        point:
+                            LatLng(currentPos!.latitude, currentPos!.longitude),
+                        builder: (context) => Container(
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: IconButton(
+                                icon: const Icon(Icons.accessibility,
+                                    color: Colors.white),
+                                onPressed: () {
+                                  print('Marker tapped!');
+                                },
+                              ),
+                            )),
+                    ...markerList,
+                    state.center != null
+                        ? Marker(
+                            point: LatLng(state.center!.latitude,
+                                state.center!.longitude),
+                            builder: (context) =>
+                                Icon(Icons.location_on_outlined))
+                        : Marker(
+                            point: LatLng(
+                                currentPos!.latitude, currentPos!.longitude),
+                            builder: (context) => const FlutterLogo())
+                  ],
+                ),
+              ],
+            ),
+            Positioned(
+                child: ElevatedButton(
+              child: Text("Debug"),
+              onPressed: () {
+                positionStream.resume();
+                isTracking = true;
+                print(currentPos);
+                // mapController.move(
+                //     LatLng(currentPos!.latitude, currentPos!.longitude), 16);
+                // LatLng(34.261643510016484, 135.26069844559623), 16);
+              },
+            ))
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 
