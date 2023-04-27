@@ -17,6 +17,7 @@ import 'util/AppUtil.dart';
 
 void main() {
   runApp(const MyApp());
+  // https://github.com/red-star25/flutter_mapbox_blog
 }
 
 /**
@@ -132,9 +133,8 @@ class _MapAppRootState extends State<MapAppRoot> {
                   if (_tabIndex == 0) {
                     Fluttertoast.showToast(msg: "位置を追加する処理");
                     // AppUtil.notify();
-                    print("位置を保存する処理");
                     print(
-                        "lat: ${state.pickedLocation?.latitude} lon: ${state.pickedLocation?.longitude}");
+                        "picked lat: ${state.pickedLocation?.latitude} lon: ${state.pickedLocation?.longitude}");
                     if (state.pickedLocation != null) {
                       showDialog(
                           context: context,
@@ -147,7 +147,6 @@ class _MapAppRootState extends State<MapAppRoot> {
                                     locationItem.toMap(),
                                     conflictAlgorithm:
                                         ConflictAlgorithm.replace);
-                                print("inserted: $id");
                                 Navigator.pop(context, true);
                                 context.read<LocationBloc>().add(
                                     AddLocationToAllLocation(locationItem));
@@ -163,11 +162,14 @@ class _MapAppRootState extends State<MapAppRoot> {
                 child: const Icon(Icons.add),
               ),
             ),
-            bottomNavigationBar:
-                BottomNavigationBar(onTap: _tabTapped, items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.map), label: "地図"),
-              BottomNavigationBarItem(icon: Icon(Icons.settings), label: "設定"),
-            ]),
+            bottomNavigationBar: BottomNavigationBar(
+                currentIndex: _tabIndex,
+                onTap: _tabTapped,
+                items: const [
+                  BottomNavigationBarItem(icon: Icon(Icons.map), label: "地図"),
+                  BottomNavigationBarItem(
+                      icon: Icon(Icons.settings), label: "設定"),
+                ]),
             body: IndexedStack(
               index: _tabIndex,
               children: _tabList,
