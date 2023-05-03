@@ -26,30 +26,17 @@ class _MapScreenState extends State<MapScreen> {
     accuracy: LocationAccuracy.best,
   );
   static MapController mapController = MapController();
-  Position? currentPos = null;
+  Position? currentPos;
   List<Marker> markerList = [];
   late StreamSubscription<Position> positionStream;
+  late LocationBloc _locationBloc;
   bool isTracking = true;
   _MapScreenState() {
     positionStream =
         Geolocator.getPositionStream(locationSettings: locationSettings)
             .listen((Position? position) {
-      print(position == null
-          ? 'Unknown'
-          : 'update ${position.latitude.toString()}, ${position.longitude.toString()}');
-      if (position != null && isTracking) {
-        currentPos = position;
-        // mapController.move(centerLatLng!, mapController.zoom);
-        setState(() {});
-      }
-      if (mapController == null) {
-        print("mapController is not itialized");
-      } else {
-        print("mapController is ialized");
-        Timer(const Duration(seconds: 1), () {
-          mapController.move(
-              LatLng(currentPos!.latitude, currentPos!.longitude), 16);
-        });
+      if (position != null) {
+        updatePosition(position);
       }
     });
   }
@@ -58,96 +45,43 @@ class _MapScreenState extends State<MapScreen> {
     super.initState();
     print("initState");
     // initialize();
-
+    _locationBloc = BlocProvider.of(context);
     setState(() {});
   }
 
   @override
   void dispose() {
     super.dispose();
+    print("dispose");
   }
 
   Future<Position> _determinePosition() async {
-    // bool serviceEnabled;
-    // LocationPermission permission;
-    // serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    // if (!serviceEnabled) {
-    //   return Future.error('Location services are disabled.');
-    // }
-
-    // permission = await Geolocator.checkPermission();
-    // if (permission == LocationPermission.denied) {
-    //   permission = await Geolocator.requestPermission();
-    //   if (permission == LocationPermission.denied) {
-    //     return Future.error('Location permissions are denied');
-    //   }
-    // }
-
-    // if (permission == LocationPermission.deniedForever) {
-    //   return Future.error(
-    //       'Location permissions are permanently denied, we cannot request permissions.');
-    // }
     return await Geolocator.getCurrentPosition();
   }
 
-  Future<void> initialize() async {
-    currentPos = await _determinePosition();
-    print("currentPos");
-    print(currentPos);
-    // markerList.add();
-    setState(() {});
-  }
+  // Future<void> initialize() async {
+  //   currentPos = await _determinePosition();
+  //   setState(() {});
+  // }
 
   @override
   Widget build(BuildContext context) {
     return Center(
         child:
             currentPos == null ? const GettingPosWidget() : MapScreen(context));
-    // : TestMap());
-  }
-
-  SafeArea TestMap() {
-    return SafeArea(
-      child: Stack(
-        children: [
-          FlutterMap(
-            mapController: mapController,
-            options: MapOptions(
-                center: LatLng(34.70781811178657, 135.64362330253846),
-                zoom: 16,
-                interactiveFlags: InteractiveFlag.all,
-                enableScrollWheel: true,
-                scrollWheelVelocity: 0.00001),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.app',
-              ),
-            ],
-          ),
-          Positioned(
-            top: 200,
-            child: ElevatedButton(
-                onPressed: () {
-                  mapController.move(
-                      LatLng(34.261643510016484, 135.26069844559623), 16);
-                },
-                child: Text("AAA")),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget MapScreen(BuildContext context) {
     return BlocBuilder<LocationBloc, LocationState>(
       builder: (context, state) {
-        if (state.center != null) {
-          print("center is not null");
+        if (state.center != null && !state.isTracking) {
+          // print("center is not null");
           isTracking = false;
           positionStream.pause();
           mapController.move(
-              LatLng(state.center!.latitude, state.center!.longitude), 16);
+              LatLng(state.center!.latitude, state.center!.longitude),
+              mapController.zoom);
+          // setState(() {});
         }
         return Stack(
           children: [
@@ -200,16 +134,23 @@ class _MapScreenState extends State<MapScreen> {
                               ),
                             )),
                     ...markerList,
-                    state.center != null
+                    state.center != null && !isTracking
                         ? Marker(
                             point: LatLng(state.center!.latitude,
                                 state.center!.longitude),
-                            builder: (context) =>
-                                Icon(Icons.location_on_outlined))
+                            builder: (context) => IconButton(
+                                  icon: Icon(Icons.location_on_outlined),
+                                  onPressed: () {},
+                                ))
+                        // 本来センターに値が入ってない時何も表示させたくない
                         : Marker(
                             point: LatLng(
                                 currentPos!.latitude, currentPos!.longitude),
-                            builder: (context) => const FlutterLogo())
+                            builder: (context) => const FlutterLogo()),
+                    Marker(
+                        point:
+                            LatLng(currentPos!.latitude, currentPos!.longitude),
+                        builder: (context) => const FlutterLogo())
                   ],
                 ),
               ],
@@ -218,12 +159,14 @@ class _MapScreenState extends State<MapScreen> {
                 child: ElevatedButton(
               child: Text("Debug"),
               onPressed: () {
-                positionStream.resume();
                 isTracking = true;
-                print(currentPos);
-                // mapController.move(
-                //     LatLng(currentPos!.latitude, currentPos!.longitude), 16);
-                // LatLng(34.261643510016484, 135.26069844559623), 16);
+                positionStream.resume();
+                setState(() {});
+                print(mapController.zoom);
+                context.read<LocationBloc>().add(ToggleIsTrackingEvent(true));
+                mapController.move(
+                    LatLng(currentPos!.latitude, currentPos!.longitude),
+                    mapController.zoom);
               },
             ))
           ],
@@ -243,6 +186,50 @@ class _MapScreenState extends State<MapScreen> {
             ));
     markerList.add(marker);
     setState(() {});
+  }
+
+  void updatePosition(Position position) {
+    print(position == null
+        ? 'Unknown'
+        : 'update ${position.latitude.toString()}, ${position.longitude.toString()}');
+    print(isTracking ? "tracking" : "not tracking");
+    if (position != null) {
+      currentPos = position;
+      // mapController.move(centerLatLng!, mapController.zoom);
+      setState(() {});
+    }
+
+    if (mapController == null) {
+      print("mapController is not itialized");
+    } else {
+      print("mapController.move");
+      if (_locationBloc.state.isTracking) {
+        Timer(const Duration(milliseconds: 100), () {
+          print("XXXX");
+          mapController.move(
+              LatLng(currentPos!.latitude, currentPos!.longitude), 16);
+        });
+      }
+    }
+
+    if (_locationBloc.state.activeLocatons?.length != 0) {
+      // アクティブな位置がなければこれ以上処理をする必要がないのでreturn
+      return;
+    }
+    // 距離を確認して近ければ通知を出す機能（仮）
+    double distance = Geolocator.distanceBetween(currentPos!.latitude,
+        currentPos!.longitude, 34.70784266877442, 135.63899221860058);
+    print("distance: $distance");
+    if (distance <= 100) {
+      AppUtil.notify(
+          title: "通知", body: "目的に近づきました。", id: AppUtil.STABLE_NOTIFICATION_ID);
+    }
+    // AppUtil.notify(
+    //     title: "通知",
+    //     body: "目的地までの距離 ${distance}m。",
+    //     id: AppUtil.UPDATE_NOTIFICATION_ID,
+    //     playSound: false,
+    //     vib: false);
   }
 }
 

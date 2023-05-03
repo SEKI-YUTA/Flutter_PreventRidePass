@@ -3,6 +3,11 @@ import 'package:prevent_ride_pass/model/SavedLocation.dart';
 
 abstract class LocationEvent {}
 
+class ToggleIsTrackingEvent extends LocationEvent {
+  bool isTracking;
+  ToggleIsTrackingEvent(this.isTracking);
+}
+
 class SetcenterLocationEvent extends LocationEvent {
   LatLng center;
   SetcenterLocationEvent(this.center);

@@ -39,17 +39,46 @@ class _LocationListScreenState extends State<LocationListScreen> {
                           itemBuilder: (context, index) {
                             SavedLocation location =
                                 state.allLocations!.elementAt(index);
-                            return ListTile(
-                              autofocus: false,
-                              title: Text(location.name),
-                              onTap: () {
-                                context.read<LocationBloc>().add(
-                                    SetcenterLocationEvent(LatLng(
-                                        location.latitude,
-                                        location.longitude)));
-                              },
-                              subtitle: Text(
-                                  "緯度: ${location.latitude} 経度: ${location.longitude}"),
+                            return Card(
+                              child: Column(children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  width: MediaQuery.of(context).size.width,
+                                  child: Text(
+                                    location.name,
+                                    textAlign: TextAlign.start,
+                                    style: TextStyle(fontSize: 26),
+                                  ),
+                                ),
+                                Text(
+                                    "緯度: ${location.latitude} 経度: ${location.longitude}"),
+                                SizedBox(
+                                  height: 10,
+                                ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    ElevatedButton(
+                                        onPressed: () {
+                                          // 地図上で表示させる処理
+                                          context.read<LocationBloc>().add(
+                                              SetcenterLocationEvent(LatLng(
+                                                  location.latitude,
+                                                  location.longitude)));
+                                          context.read<LocationBloc>().add(
+                                              ToggleIsTrackingEvent(false));
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text("地図で表示")),
+                                    SizedBox(width: 10),
+                                    ElevatedButton(
+                                        onPressed: () {
+                                          // 目的地に追加する処理
+                                        },
+                                        child: Text("目的地に追加")),
+                                  ],
+                                )
+                              ]),
                             );
                           })
                       : const Expanded(

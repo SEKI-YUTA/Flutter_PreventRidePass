@@ -6,6 +6,8 @@ import 'package:prevent_ride_pass/model/SavedLocation.dart';
 import 'package:sqflite/sqflite.dart';
 
 class AppUtil {
+  static final UPDATE_NOTIFICATION_ID = 1001;
+  static final STABLE_NOTIFICATION_ID = 1002;
   static void demo() {
     print("demo");
   }
@@ -29,7 +31,12 @@ class AppUtil {
     });
   }
 
-  static Future<void> notify() {
+  static Future<void> notify(
+      {required String title,
+      required String body,
+      required int id,
+      bool playSound = true,
+      bool vib = true}) {
     final flnp = FlutterLocalNotificationsPlugin();
     return flnp
         .initialize(
@@ -38,13 +45,15 @@ class AppUtil {
           ),
         )
         .then((_) => flnp.show(
-            0,
-            'title',
-            'body',
+            id,
+            title,
+            body,
             NotificationDetails(
               android: AndroidNotificationDetails(
                 'channel_id',
                 'channel_name',
+                playSound: playSound,
+                enableVibration: vib,
               ),
             )));
   }

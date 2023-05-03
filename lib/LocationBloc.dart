@@ -7,6 +7,14 @@ import 'package:prevent_ride_pass/repository/LocationRepository.dart';
 
 class LocationBloc extends Bloc<LocationEvent, LocationState> {
   LocationBloc() : super(LocationState()) {
+    on<ToggleIsTrackingEvent>((event, emit) {
+      emit(LocationState(
+          isTracking: event.isTracking,
+          center: state.center,
+          location: state.pickedLocation,
+          allLocations: state.allLocations,
+          activeLocatons: state.activeLocatons));
+    });
     on<SetcenterLocationEvent>((event, emit) {
       emit(LocationState(
           center: event.center,
