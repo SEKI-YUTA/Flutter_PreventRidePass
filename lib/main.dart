@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:path/path.dart';
 import 'package:prevent_ride_pass/AppConstantValues.dart';
@@ -57,6 +58,7 @@ class _MapAppRootState extends State<MapAppRoot> {
   static const _tabList = [MapScreen(), SettingScreen()];
   int _tabIndex = 0;
   bool _locationAddBtnShown = false;
+  bool _ableToAccessLocation = false;
   List<SavedLocation> allLocations = List.empty();
   Database? database = null;
 
@@ -78,6 +80,8 @@ class _MapAppRootState extends State<MapAppRoot> {
     database = await AppUtil.openAppDatabase();
     allLocations = await AppUtil.getSavedLocations(database!);
     print("item length " + allLocations.length.toString());
+    _ableToAccessLocation = await checkPermission();
+    setState(() {});
   }
 
   void _tabTapped(int index) {
@@ -92,6 +96,37 @@ class _MapAppRootState extends State<MapAppRoot> {
     } else {
       _locationAddBtnShown = !_locationAddBtnShown;
     }
+  }
+
+  Future<bool> checkPermission() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // そもそも位置情報サービスがオフになっている
+      return false;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return false;
+      } else if (permission == LocationPermission.always ||
+          permission == LocationPermission.whileInUse) {
+        return true;
+      }
+    } else if (permission == LocationPermission.always ||
+        permission == LocationPermission.whileInUse) {
+      return true;
+    } else {
+      return false;
+    }
+
+    return permission == LocationPermission.always ||
+            permission == LocationPermission.whileInUse
+        ? true
+        : false;
   }
 
   @override
@@ -170,10 +205,12 @@ class _MapAppRootState extends State<MapAppRoot> {
                   BottomNavigationBarItem(
                       icon: Icon(Icons.settings), label: "設定"),
                 ]),
-            body: IndexedStack(
-              index: _tabIndex,
-              children: _tabList,
-            ));
+            body: _ableToAccessLocation
+                ? IndexedStack(
+                    index: _tabIndex,
+                    children: _tabList,
+                  )
+                : Container());
       },
     );
   }
