@@ -12,6 +12,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:prevent_ride_pass/LocationBloc.dart';
 import 'package:prevent_ride_pass/location_event.dart';
 import 'package:prevent_ride_pass/location_state.dart';
+import 'package:prevent_ride_pass/model/SavedLocation.dart';
 import 'package:prevent_ride_pass/util/AppUtil.dart';
 
 class MapScreen extends StatefulWidget {
@@ -31,6 +32,9 @@ class _MapScreenState extends State<MapScreen> {
   late StreamSubscription<Position> positionStream;
   late LocationBloc _locationBloc;
   bool isTracking = true;
+  bool isStopped = false;
+  bool isRinging = false;
+
   _MapScreenState() {
     positionStream =
         Geolocator.getPositionStream(locationSettings: locationSettings)
@@ -214,16 +218,34 @@ class _MapScreenState extends State<MapScreen> {
 
     if (_locationBloc.state.activeLocatons?.length != 0) {
       // アクティブな位置がなければこれ以上処理をする必要がないのでreturn
+      List<SavedLocation>? targetList = _locationBloc.state.activeLocatons;
+      if (targetList == null) return;
+      for (int i = 0; i < targetList.length; i++) {
+        SavedLocation item = targetList[i];
+        double distance = Geolocator.distanceBetween(currentPos!.latitude,
+            currentPos!.longitude, item.latitude, item.longitude);
+        print("distance $i: $distance");
+        if (distance <= 100 && (!isRinging && !isStopped)) {
+          AppUtil.notify(
+              title: "通知",
+              body: "目的地に近づきました。",
+              id: AppUtil.STABLE_NOTIFICATION_ID);
+          isRinging = true;
+          setState(() {});
+        }
+      }
       return;
     }
     // 距離を確認して近ければ通知を出す機能（仮）
-    double distance = Geolocator.distanceBetween(currentPos!.latitude,
-        currentPos!.longitude, 34.70784266877442, 135.63899221860058);
-    print("distance: $distance");
-    if (distance <= 100) {
-      AppUtil.notify(
-          title: "通知", body: "目的に近づきました。", id: AppUtil.STABLE_NOTIFICATION_ID);
-    }
+    // double distance = Geolocator.distanceBetween(currentPos!.latitude,
+    //     currentPos!.longitude, 34.70784266877442, 135.63899221860058);
+    // print("distance: $distance");
+    // if (distance <= 100 && (!isRinging && !isStopped)) {
+    //   AppUtil.notify(
+    //       title: "通知", body: "目的地に近づきました。", id: AppUtil.STABLE_NOTIFICATION_ID);
+    //   isRinging = true;
+    //   setState(() {});
+    // }
     // AppUtil.notify(
     //     title: "通知",
     //     body: "目的地までの距離 ${distance}m。",

@@ -74,6 +74,9 @@ class _LocationListScreenState extends State<LocationListScreen> {
                                     ElevatedButton(
                                         onPressed: () {
                                           // 目的地に追加する処理
+                                          context.read<LocationBloc>().add(
+                                              AddLocationToActiveLocationList(
+                                                  location));
                                         },
                                         child: Text("目的地に追加")),
                                   ],

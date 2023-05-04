@@ -75,6 +75,19 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
           allLocations: null,
           activeLocatons: state.activeLocatons));
     });
+    on<AddLocationToActiveLocationList>((event, emit) {
+      // List<SavedLocation>? list = state.activeLocatons;
+      // if (list == null) {
+      //   print("list is null");
+      //   return;
+      // }
+      // list.add(event.location);
+      emit(LocationState(
+          center: state.center,
+          location: state.pickedLocation,
+          allLocations: state.allLocations,
+          activeLocatons: state.activeLocatons?..add(event.location)));
+    });
     on<SetActiveLocationListEvent>((event, emit) {
       emit(LocationState(
           center: state.center,
@@ -94,6 +107,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
   @override
   void onChange(Change<LocationState> change) {
     super.onChange(change);
-    print("changed");
+    print("state changed");
+    print("activeLocation size: ${state.activeLocatons?.length}");
   }
 }

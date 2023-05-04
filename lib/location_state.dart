@@ -6,7 +6,7 @@ class LocationState {
   LatLng? center = null;
   LatLng? pickedLocation = null;
   List<SavedLocation>? allLocations = List.empty();
-  List<SavedLocation>? activeLocatons = List.empty();
+  List<SavedLocation> activeLocatons = List.empty();
 
   LocationState(
       {bool isTracking = true,
@@ -18,7 +18,11 @@ class LocationState {
     this.center = center;
     this.pickedLocation = location;
     this.allLocations = allLocations;
-    this.activeLocatons = activeLocatons;
+    if (activeLocatons == null) {
+      this.activeLocatons = List.empty(growable: true);
+    } else {
+      this.activeLocatons = activeLocatons;
+    }
   }
 }
 
