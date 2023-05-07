@@ -62,7 +62,7 @@ class _LocationListScreenState extends State<LocationListScreen> {
                                         onPressed: () {
                                           // 地図上で表示させる処理
                                           context.read<LocationBloc>().add(
-                                              SetcenterLocationEvent(LatLng(
+                                              SetCenterLocationEvent(LatLng(
                                                   location.latitude,
                                                   location.longitude)));
                                           context.read<LocationBloc>().add(

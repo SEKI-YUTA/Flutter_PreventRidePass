@@ -8,9 +8,9 @@ class ToggleIsTrackingEvent extends LocationEvent {
   ToggleIsTrackingEvent(this.isTracking);
 }
 
-class SetcenterLocationEvent extends LocationEvent {
+class SetCenterLocationEvent extends LocationEvent {
   LatLng center;
-  SetcenterLocationEvent(this.center);
+  SetCenterLocationEvent(this.center);
 }
 
 class ResetCenterLocationEvent extends LocationEvent {}

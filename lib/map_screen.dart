@@ -31,7 +31,7 @@ class _MapScreenState extends State<MapScreen> {
   List<Marker> markerList = [];
   late StreamSubscription<Position> positionStream;
   late LocationBloc _locationBloc;
-  bool isTracking = true;
+  // bool isTracking = true;
   bool isStopped = false;
   bool isRinging = false;
 
@@ -40,15 +40,13 @@ class _MapScreenState extends State<MapScreen> {
         Geolocator.getPositionStream(locationSettings: locationSettings)
             .listen((Position? position) {
       if (position != null) {
-        updatePosition(position);
+        updatePosition(position, _locationBloc);
       }
     });
   }
   @override
   void initState() {
     super.initState();
-    print("initState");
-    // initialize();
     _locationBloc = BlocProvider.of(context);
     setState(() {});
   }
@@ -56,17 +54,11 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void dispose() {
     super.dispose();
-    print("dispose");
   }
 
   Future<Position> _determinePosition() async {
     return await Geolocator.getCurrentPosition();
   }
-
-  // Future<void> initialize() async {
-  //   currentPos = await _determinePosition();
-  //   setState(() {});
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -80,8 +72,7 @@ class _MapScreenState extends State<MapScreen> {
       builder: (context, state) {
         if (state.center != null && !state.isTracking) {
           // print("center is not null");
-          isTracking = false;
-          positionStream.pause();
+          // isTracking = false;
           mapController.move(
               LatLng(state.center!.latitude, state.center!.longitude),
               mapController.zoom);
@@ -94,9 +85,13 @@ class _MapScreenState extends State<MapScreen> {
               // key: Key('map${currentPos!.latitude}${currentPos!.longitude}'),
               mapController: mapController,
               options: MapOptions(
-                  keepAlive: true,
-                  // center: LatLng(34.70781811178657, 135.64362330253846),
                   center: LatLng(currentPos!.latitude, currentPos!.longitude),
+                  onPositionChanged: (position, hasGesture) {
+                    if (!hasGesture) return;
+                    context
+                        .read<LocationBloc>()
+                        .add(ToggleIsTrackingEvent(false));
+                  },
                   onTap: (tapPosition, point) {
                     Fluttertoast.showToast(
                         msg: "lat: ${point.latitude} lon: ${point.longitude} ");
@@ -105,7 +100,6 @@ class _MapScreenState extends State<MapScreen> {
                         .add(SetPickedLocationEvent(point));
                     addMarker(point);
                   },
-                  // center: centerLatLng,
                   interactiveFlags: InteractiveFlag.all,
                   enableScrollWheel: true,
                   scrollWheelVelocity: 0.00001),
@@ -119,26 +113,26 @@ class _MapScreenState extends State<MapScreen> {
                         point:
                             LatLng(currentPos!.latitude, currentPos!.longitude),
                         builder: (context) => const FlutterLogo()),
-                    Marker(
-                        width: 60.0,
-                        height: 60.0,
-                        point:
-                            LatLng(currentPos!.latitude, currentPos!.longitude),
-                        builder: (context) => Container(
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              child: IconButton(
-                                icon: const Icon(Icons.accessibility,
-                                    color: Colors.white),
-                                onPressed: () {
-                                  print('Marker tapped!');
-                                },
-                              ),
-                            )),
+                    // Marker(
+                    //     width: 60.0,
+                    //     height: 60.0,
+                    //     point:
+                    //         LatLng(currentPos!.latitude, currentPos!.longitude),
+                    //     builder: (context) => Container(
+                    //           decoration: BoxDecoration(
+                    //             color: Colors.blue.withOpacity(0.2),
+                    //             borderRadius: BorderRadius.circular(30),
+                    //           ),
+                    //           child: IconButton(
+                    //             icon: const Icon(Icons.accessibility,
+                    //                 color: Colors.white),
+                    //             onPressed: () {
+                    //               print('Marker tapped!');
+                    //             },
+                    //           ),
+                    //         )),
                     ...markerList,
-                    state.center != null && !isTracking
+                    state.center != null
                         ? Marker(
                             point: LatLng(state.center!.latitude,
                                 state.center!.longitude),
@@ -163,11 +157,12 @@ class _MapScreenState extends State<MapScreen> {
                 child: ElevatedButton(
               child: Text("Debug"),
               onPressed: () {
-                isTracking = true;
+                // isTracking = true;
                 positionStream.resume();
                 setState(() {});
                 print(mapController.zoom);
                 context.read<LocationBloc>().add(ToggleIsTrackingEvent(true));
+                print("XX ${state.isTracking}");
                 mapController.move(
                     LatLng(currentPos!.latitude, currentPos!.longitude),
                     mapController.zoom);
@@ -192,12 +187,16 @@ class _MapScreenState extends State<MapScreen> {
     setState(() {});
   }
 
-  void updatePosition(Position position) {
+  /**
+   * 位置情報をlistenしてる時に実行される
+   */
+  void updatePosition(Position position, LocationBloc bloc) {
     print(position == null
         ? 'Unknown'
         : 'update ${position.latitude.toString()}, ${position.longitude.toString()}');
-    print(isTracking ? "tracking" : "not tracking");
+    // print(isTracking ? "tracking" : "not tracking");
     if (position != null) {
+      print("update currentPos");
       currentPos = position;
       // mapController.move(centerLatLng!, mapController.zoom);
       setState(() {});
@@ -206,8 +205,9 @@ class _MapScreenState extends State<MapScreen> {
     if (mapController == null) {
       print("mapController is not itialized");
     } else {
-      print("mapController.move");
+      print(_locationBloc.state.isTracking);
       if (_locationBloc.state.isTracking) {
+        print("mapController.move");
         Timer(const Duration(milliseconds: 100), () {
           print("XXXX");
           mapController.move(
@@ -236,22 +236,6 @@ class _MapScreenState extends State<MapScreen> {
       }
       return;
     }
-    // 距離を確認して近ければ通知を出す機能（仮）
-    // double distance = Geolocator.distanceBetween(currentPos!.latitude,
-    //     currentPos!.longitude, 34.70784266877442, 135.63899221860058);
-    // print("distance: $distance");
-    // if (distance <= 100 && (!isRinging && !isStopped)) {
-    //   AppUtil.notify(
-    //       title: "通知", body: "目的地に近づきました。", id: AppUtil.STABLE_NOTIFICATION_ID);
-    //   isRinging = true;
-    //   setState(() {});
-    // }
-    // AppUtil.notify(
-    //     title: "通知",
-    //     body: "目的地までの距離 ${distance}m。",
-    //     id: AppUtil.UPDATE_NOTIFICATION_ID,
-    //     playSound: false,
-    //     vib: false);
   }
 }
 

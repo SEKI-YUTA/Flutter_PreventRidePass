@@ -15,8 +15,9 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
           allLocations: state.allLocations,
           activeLocatons: state.activeLocatons));
     });
-    on<SetcenterLocationEvent>((event, emit) {
+    on<SetCenterLocationEvent>((event, emit) {
       emit(LocationState(
+          isTracking: state.isTracking,
           center: event.center,
           location: state.pickedLocation,
           allLocations: state.allLocations,
@@ -24,6 +25,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
     });
     on<ResetCenterLocationEvent>((event, emit) {
       emit(LocationState(
+          isTracking: state.isTracking,
           center: null,
           location: state.pickedLocation,
           allLocations: state.allLocations,
@@ -32,6 +34,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
     on<SetPickedLocationEvent>((event, emit) {
       print("pick len ${state.allLocations?.length} ");
       emit(LocationState(
+          isTracking: state.isTracking,
           center: state.center,
           location: event.location,
           allLocations: state.allLocations,
@@ -39,6 +42,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
     });
     on<ResetPickedLocationEvent>((event, emit) {
       emit(LocationState(
+          isTracking: state.isTracking,
           center: state.center,
           location: null,
           allLocations: state.allLocations,
@@ -56,6 +60,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
       // print("len ${state.allLocations?.length}");
       // print("len ${event.allLocations?.length}");
       emit(LocationState(
+          isTracking: state.isTracking,
           center: state.center,
           location: state.pickedLocation,
           allLocations: state.allLocations?..add(event.location),
@@ -63,6 +68,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
     });
     on<SetAllLocationEvent>((event, emit) {
       emit(LocationState(
+          isTracking: state.isTracking,
           center: state.center,
           location: state.pickedLocation,
           allLocations: event.allLocations,
@@ -70,6 +76,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
     });
     on<ClearAllLocationEvent>((event, emit) {
       emit(LocationState(
+          isTracking: state.isTracking,
           center: state.center,
           location: state.pickedLocation,
           allLocations: null,
@@ -83,6 +90,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
       // }
       // list.add(event.location);
       emit(LocationState(
+          isTracking: state.isTracking,
           center: state.center,
           location: state.pickedLocation,
           allLocations: state.allLocations,
@@ -90,6 +98,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
     });
     on<SetActiveLocationListEvent>((event, emit) {
       emit(LocationState(
+          isTracking: state.isTracking,
           center: state.center,
           location: state.pickedLocation,
           allLocations: state.allLocations,
@@ -97,6 +106,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
     });
     on<ClearActiveLocationListEvent>((event, emit) {
       emit(LocationState(
+          isTracking: state.isTracking,
           center: state.center,
           location: state.pickedLocation,
           allLocations: state.allLocations,
@@ -107,7 +117,7 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
   @override
   void onChange(Change<LocationState> change) {
     super.onChange(change);
-    print("state changed");
-    print("activeLocation size: ${state.activeLocatons?.length}");
+    print("state changed　isTracking: ${state.isTracking}");
+    // print("activeLocation size: ${state.activeLocatons?.length}");
   }
 }
