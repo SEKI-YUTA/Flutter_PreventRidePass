@@ -104,6 +104,16 @@ class LocationBloc extends Bloc<LocationEvent, LocationState> {
           allLocations: state.allLocations,
           activeLocatons: event.activeLocatons));
     });
+    on<RemoveLocationOfActiveLocationList>((event, emit) {
+      List<SavedLocation> list = state.activeLocatons;
+      list.remove(event.location);
+      emit(LocationState(
+          isTracking: state.isTracking,
+          center: state.center,
+          location: state.pickedLocation,
+          allLocations: state.allLocations,
+          activeLocatons: list));
+    });
     on<ClearActiveLocationListEvent>((event, emit) {
       emit(LocationState(
           isTracking: state.isTracking,

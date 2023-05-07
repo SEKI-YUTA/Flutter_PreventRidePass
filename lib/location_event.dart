@@ -48,4 +48,9 @@ class AddLocationToActiveLocationList extends LocationEvent {
   AddLocationToActiveLocationList(this.location);
 }
 
+class RemoveLocationOfActiveLocationList extends LocationEvent {
+  SavedLocation location;
+  RemoveLocationOfActiveLocationList(this.location);
+}
+
 class ClearActiveLocationListEvent extends LocationEvent {}

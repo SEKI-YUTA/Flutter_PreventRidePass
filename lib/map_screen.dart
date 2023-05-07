@@ -14,10 +14,12 @@ import 'package:prevent_ride_pass/location_event.dart';
 import 'package:prevent_ride_pass/location_state.dart';
 import 'package:prevent_ride_pass/model/SavedLocation.dart';
 import 'package:prevent_ride_pass/util/AppUtil.dart';
+import 'package:sqflite/sqflite.dart';
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
-
+  MapScreen({super.key, required this.database, required this.mapController});
+  Database? database;
+  MapController mapController;
   @override
   State<MapScreen> createState() => _MapScreenState();
 }
@@ -26,7 +28,7 @@ class _MapScreenState extends State<MapScreen> {
   final LocationSettings locationSettings = const LocationSettings(
     accuracy: LocationAccuracy.best,
   );
-  static MapController mapController = MapController();
+  late MapController mapController;
   Position? currentPos;
   List<Marker> markerList = [];
   late StreamSubscription<Position> positionStream;
@@ -47,6 +49,8 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
+    mapController = widget.mapController;
+    print("initState XXXX");
     _locationBloc = BlocProvider.of(context);
     setState(() {});
   }
@@ -70,14 +74,14 @@ class _MapScreenState extends State<MapScreen> {
   Widget MapScreen(BuildContext context) {
     return BlocBuilder<LocationBloc, LocationState>(
       builder: (context, state) {
-        if (state.center != null && !state.isTracking) {
-          // print("center is not null");
-          // isTracking = false;
-          mapController.move(
-              LatLng(state.center!.latitude, state.center!.longitude),
-              mapController.zoom);
-          // setState(() {});
-        }
+        // if (state.center != null && !state.isTracking) {
+        // print("center is not null");
+        // isTracking = false;
+        // mapController.move(
+        //     LatLng(state.center!.latitude, state.center!.longitude),
+        //     mapController.zoom);
+        // setState(() {});
+        // }
         return Stack(
           children: [
             FlutterMap(
@@ -145,10 +149,22 @@ class _MapScreenState extends State<MapScreen> {
                             point: LatLng(
                                 currentPos!.latitude, currentPos!.longitude),
                             builder: (context) => const FlutterLogo()),
-                    Marker(
-                        point:
-                            LatLng(currentPos!.latitude, currentPos!.longitude),
-                        builder: (context) => const FlutterLogo())
+                    for (SavedLocation activeLocation
+                        in state.activeLocatons) ...{
+                      Marker(
+                          point: LatLng(activeLocation.latitude,
+                              activeLocation.longitude),
+                          builder: (context) {
+                            return IconButton(
+                                onPressed: () {
+                                  print(activeLocation.name);
+                                },
+                                icon: const Icon(
+                                  Icons.location_pin,
+                                  color: Colors.red,
+                                ));
+                          })
+                    }
                   ],
                 ),
               ],
@@ -167,7 +183,37 @@ class _MapScreenState extends State<MapScreen> {
                     LatLng(currentPos!.latitude, currentPos!.longitude),
                     mapController.zoom);
               },
-            ))
+            )),
+            Positioned(
+              bottom: 20,
+              right: 20,
+              child: FloatingActionButton(
+                onPressed: () {
+                  Fluttertoast.showToast(msg: "位置を追加する処理");
+                  // AppUtil.notify();
+                  print(
+                      "picked lat: ${state.pickedLocation?.latitude} lon: ${state.pickedLocation?.longitude}");
+                  if (state.pickedLocation != null) {
+                    showDialog(
+                        context: context,
+                        builder: (context) {
+                          return addDialog(state.pickedLocation!,
+                              (locationItem) async {
+                            if (widget.database != null) {
+                              int id = await widget.database!.insert(
+                                  SavedLocation.tableName, locationItem.toMap(),
+                                  conflictAlgorithm: ConflictAlgorithm.replace);
+                              context
+                                  .read<LocationBloc>()
+                                  .add(AddLocationToAllLocation(locationItem));
+                            }
+                          });
+                        });
+                  }
+                },
+                child: const Icon(Icons.add),
+              ),
+            )
           ],
         );
       },
@@ -209,7 +255,6 @@ class _MapScreenState extends State<MapScreen> {
       if (_locationBloc.state.isTracking) {
         print("mapController.move");
         Timer(const Duration(milliseconds: 100), () {
-          print("XXXX");
           mapController.move(
               LatLng(currentPos!.latitude, currentPos!.longitude), 16);
         });
@@ -236,6 +281,47 @@ class _MapScreenState extends State<MapScreen> {
       }
       return;
     }
+  }
+
+  Widget addDialog(LatLng location, void Function(SavedLocation) addLocation) {
+    final SizedBox spacer1 = SizedBox(
+      height: 8,
+    );
+    String inputedName = "";
+    double latitude = 0.0;
+    double longitude = 0.0;
+    latitude = location.latitude;
+    longitude = location.longitude;
+    return Dialog(
+      child: Container(
+        padding: EdgeInsets.all(10),
+        height: 200,
+        child:
+            Column(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+          TextField(
+            onChanged: (value) {
+              inputedName = value;
+              setState(() {});
+            },
+            decoration: InputDecoration(hintText: "位置の名前"),
+          ),
+          spacer1,
+          Text("緯度: ${location.latitude}\n経度: ${location.longitude}"),
+          spacer1,
+          ElevatedButton(
+              onPressed: () {
+                if (inputedName == "") {
+                  Fluttertoast.showToast(msg: "名前が入力されていません");
+                  return;
+                }
+                SavedLocation location =
+                    SavedLocation(inputedName, latitude, longitude);
+                addLocation(location);
+              },
+              child: Text("作成"))
+        ]),
+      ),
+    );
   }
 }
 

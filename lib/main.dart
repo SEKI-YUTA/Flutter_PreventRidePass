@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -55,12 +56,18 @@ class MapAppRoot extends StatefulWidget {
 }
 
 class _MapAppRootState extends State<MapAppRoot> {
-  static const _tabList = [MapScreen(), SettingScreen()];
   int _tabIndex = 0;
   bool _locationAddBtnShown = false;
   bool _ableToAccessLocation = false;
   List<SavedLocation> allLocations = List.empty();
   Database? database = null;
+  MapController mapController = MapController();
+  // List<Widget> _tabList = [
+  //   MapScreen(
+  //     database: database,
+  //   ),
+  //   SettingScreen()
+  // ];
 
   @override
   void initState() {
@@ -155,48 +162,49 @@ class _MapAppRootState extends State<MapAppRoot> {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => LocationListScreen(),
+                            builder: (context) => LocationListScreen(
+                                mapController: mapController),
                           ));
                     },
                     icon: const Icon(Icons.list))
               ],
             ),
-            floatingActionButton: Visibility(
-              visible: _locationAddBtnShown,
-              child: FloatingActionButton(
-                onPressed: () {
-                  if (_tabIndex == 0) {
-                    Fluttertoast.showToast(msg: "位置を追加する処理");
-                    // AppUtil.notify();
-                    print(
-                        "picked lat: ${state.pickedLocation?.latitude} lon: ${state.pickedLocation?.longitude}");
-                    if (state.pickedLocation != null) {
-                      showDialog(
-                          context: context,
-                          builder: (context) {
-                            return addDialog(state.pickedLocation!,
-                                (locationItem) async {
-                              if (database != null) {
-                                int id = await database!.insert(
-                                    SavedLocation.tableName,
-                                    locationItem.toMap(),
-                                    conflictAlgorithm:
-                                        ConflictAlgorithm.replace);
-                                Navigator.pop(context, true);
-                                context.read<LocationBloc>().add(
-                                    AddLocationToAllLocation(locationItem));
-                              }
-                            });
-                          });
-                    }
-                  } else {
-                    _tabIndex = 0;
-                    setState(() {});
-                  }
-                },
-                child: const Icon(Icons.add),
-              ),
-            ),
+            // floatingActionButton: Visibility(
+            //   visible: _locationAddBtnShown,
+            //   child: FloatingActionButton(
+            //     onPressed: () {
+            //       if (_tabIndex == 0) {
+            //         Fluttertoast.showToast(msg: "位置を追加する処理");
+            //         // AppUtil.notify();
+            //         print(
+            //             "picked lat: ${state.pickedLocation?.latitude} lon: ${state.pickedLocation?.longitude}");
+            //         if (state.pickedLocation != null) {
+            //           showDialog(
+            //               context: context,
+            //               builder: (context) {
+            //                 return addDialog(state.pickedLocation!,
+            //                     (locationItem) async {
+            //                   if (database != null) {
+            //                     int id = await database!.insert(
+            //                         SavedLocation.tableName,
+            //                         locationItem.toMap(),
+            //                         conflictAlgorithm:
+            //                             ConflictAlgorithm.replace);
+            //                     Navigator.pop(context, true);
+            //                     context.read<LocationBloc>().add(
+            //                         AddLocationToAllLocation(locationItem));
+            //                   }
+            //                 });
+            //               });
+            //         }
+            //       } else {
+            //         _tabIndex = 0;
+            //         setState(() {});
+            //       }
+            //     },
+            //     child: const Icon(Icons.add),
+            //   ),
+            // ),
             bottomNavigationBar: BottomNavigationBar(
                 currentIndex: _tabIndex,
                 onTap: _tabTapped,
@@ -208,51 +216,16 @@ class _MapAppRootState extends State<MapAppRoot> {
             body: _ableToAccessLocation
                 ? IndexedStack(
                     index: _tabIndex,
-                    children: _tabList,
+                    children: [
+                      MapScreen(
+                        database: database,
+                        mapController: mapController,
+                      ),
+                      SettingScreen()
+                    ],
                   )
                 : Container());
       },
-    );
-  }
-
-  Dialog addDialog(LatLng location, void Function(SavedLocation) addLocation) {
-    final SizedBox spacer1 = SizedBox(
-      height: 8,
-    );
-    String inputedName = "";
-    double latitude = 0.0;
-    double longitude = 0.0;
-    latitude = location.latitude;
-    longitude = location.longitude;
-    return Dialog(
-      child: Container(
-        padding: EdgeInsets.all(10),
-        height: 200,
-        child:
-            Column(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-          TextField(
-            onChanged: (value) {
-              inputedName = value;
-              setState(() {});
-            },
-            decoration: InputDecoration(hintText: "位置の名前"),
-          ),
-          spacer1,
-          Text("緯度: ${location.latitude}\n経度: ${location.longitude}"),
-          spacer1,
-          ElevatedButton(
-              onPressed: () {
-                if (inputedName == "") {
-                  Fluttertoast.showToast(msg: "名前が入力されていません");
-                  return;
-                }
-                SavedLocation location =
-                    SavedLocation(inputedName, latitude, longitude);
-                addLocation(location);
-              },
-              child: Text("作成"))
-        ]),
-      ),
     );
   }
 }
