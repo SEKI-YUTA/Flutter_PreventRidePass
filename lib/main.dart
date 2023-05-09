@@ -161,42 +161,6 @@ class _MapAppRootState extends State<MapAppRoot> {
                     icon: const Icon(Icons.list))
               ],
             ),
-            // floatingActionButton: Visibility(
-            //   visible: _locationAddBtnShown,
-            //   child: FloatingActionButton(
-            //     onPressed: () {
-            //       if (_tabIndex == 0) {
-            //         Fluttertoast.showToast(msg: "位置を追加する処理");
-            //         // AppUtil.notify();
-            //         print(
-            //             "picked lat: ${state.pickedLocation?.latitude} lon: ${state.pickedLocation?.longitude}");
-            //         if (state.pickedLocation != null) {
-            //           showDialog(
-            //               context: context,
-            //               builder: (context) {
-            //                 return addDialog(state.pickedLocation!,
-            //                     (locationItem) async {
-            //                   if (database != null) {
-            //                     int id = await database!.insert(
-            //                         SavedLocation.tableName,
-            //                         locationItem.toMap(),
-            //                         conflictAlgorithm:
-            //                             ConflictAlgorithm.replace);
-            //                     Navigator.pop(context, true);
-            //                     context.read<LocationBloc>().add(
-            //                         AddLocationToAllLocation(locationItem));
-            //                   }
-            //                 });
-            //               });
-            //         }
-            //       } else {
-            //         _tabIndex = 0;
-            //         setState(() {});
-            //       }
-            //     },
-            //     child: const Icon(Icons.add),
-            //   ),
-            // ),
             bottomNavigationBar: BottomNavigationBar(
                 currentIndex: _tabIndex,
                 onTap: _tabTapped,
