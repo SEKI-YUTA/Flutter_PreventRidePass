@@ -99,6 +99,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         //     mapController.zoom);
         // setState(() {});
         // }
+        bool _locationPicked = state.pickedLocation != null ? true : false;
         return Stack(
           children: [
             FlutterMap(
@@ -119,7 +120,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                     context
                         .read<LocationBloc>()
                         .add(SetPickedLocationEvent(point));
-                    addMarker(point);
+                    _addMarker(point);
                   },
                   interactiveFlags: InteractiveFlag.all,
                   enableScrollWheel: true,
@@ -214,29 +215,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               bottom: 20,
               right: 20,
               child: FloatingActionButton(
-                onPressed: () {
-                  Fluttertoast.showToast(msg: "位置を追加する処理");
-                  // AppUtil.notify();
-                  print(
-                      "picked lat: ${state.pickedLocation?.latitude} lon: ${state.pickedLocation?.longitude}");
-                  if (state.pickedLocation != null) {
-                    showDialog(
-                        context: context,
-                        builder: (context) {
-                          return addDialog(state.pickedLocation!,
-                              (locationItem) async {
-                            if (widget.database != null) {
-                              int id = await widget.database!.insert(
-                                  SavedLocation.tableName, locationItem.toMap(),
-                                  conflictAlgorithm: ConflictAlgorithm.replace);
-                              context
-                                  .read<LocationBloc>()
-                                  .add(AddLocationToAllLocation(locationItem));
-                            }
-                          });
-                        });
-                  }
-                },
+                onPressed: () => _locationPicked
+                    ? _showAddDialog(state)
+                    : Fluttertoast.showToast(msg: "位置が指定されていません。"),
+                backgroundColor: _locationPicked ? Colors.blue : Colors.grey,
                 child: const Icon(Icons.add),
               ),
             ),
@@ -279,7 +261,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
   }
 
-  void addMarker(LatLng markerPos) {
+  void _addMarker(LatLng markerPos) {
     Marker marker = Marker(
         key: GlobalKey(
             debugLabel: "${markerPos.latitude}${markerPos.longitude}"),
@@ -306,6 +288,29 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             ));
     markerList.add(marker);
     setState(() {});
+  }
+
+  void _showAddDialog(LocationState state) {
+    Fluttertoast.showToast(msg: "位置を追加する処理");
+    // AppUtil.notify();
+    print(
+        "picked lat: ${state.pickedLocation?.latitude} lon: ${state.pickedLocation?.longitude}");
+    if (state.pickedLocation != null) {
+      showDialog(
+          context: context,
+          builder: (context) {
+            return addDialog(state.pickedLocation!, (locationItem) async {
+              if (widget.database != null) {
+                int id = await widget.database!.insert(
+                    SavedLocation.tableName, locationItem.toMap(),
+                    conflictAlgorithm: ConflictAlgorithm.replace);
+                context
+                    .read<LocationBloc>()
+                    .add(AddLocationToAllLocation(locationItem));
+              }
+            });
+          });
+    }
   }
 
   /**
@@ -392,6 +397,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 SavedLocation location =
                     SavedLocation(inputedName, latitude, longitude);
                 addLocation(location);
+                Navigator.pop(context);
               },
               child: Text("作成"))
         ]),
