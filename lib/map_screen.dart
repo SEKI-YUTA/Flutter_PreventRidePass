@@ -38,6 +38,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   bool isStopped = false;
   bool isRinging = false;
 
+  double _x = 10;
+  double _y = 10;
+
   _MapScreenState() {
     positionStream =
         Geolocator.getPositionStream(locationSettings: locationSettings)
@@ -223,36 +226,43 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               ),
             ),
             Positioned(
-              left: 10,
-              top: 10,
-              child: Container(
-                height: 160,
-                width: 160,
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10)),
-                child: SingleChildScrollView(
-                    child: Column(
-                        children: state.activeLocatons.map((item) {
-                  return Column(
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 4, horizontal: 8),
-                        child: Text(
-                          item.name,
-                          style: AppConstantValues.s_text,
+              left: _x,
+              top: _y,
+              child: GestureDetector(
+                onPanUpdate: (details) {
+                  _x += details.delta.dx;
+                  _y += details.delta.dy;
+                  setState(() {});
+                },
+                child: Container(
+                  height: 160,
+                  width: 160,
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10)),
+                  child: SingleChildScrollView(
+                      child: Column(
+                          children: state.activeLocatons.map((item) {
+                    return Column(
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 4, horizontal: 8),
+                          child: Text(
+                            item.name,
+                            style: AppConstantValues.s_text,
+                          ),
                         ),
-                      ),
-                      Divider(
-                        height: 4,
-                        indent: 4,
-                        endIndent: 4,
-                      )
-                    ],
-                  );
-                }).toList())),
+                        Divider(
+                          height: 4,
+                          indent: 4,
+                          endIndent: 4,
+                        )
+                      ],
+                    );
+                  }).toList())),
+                ),
               ),
             )
           ],
