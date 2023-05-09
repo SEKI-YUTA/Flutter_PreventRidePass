@@ -150,14 +150,6 @@ class _MapAppRootState extends State<MapAppRoot> {
               actions: [
                 IconButton(
                     onPressed: () {
-                      Fluttertoast.showToast(msg: "位置を追加");
-                      _toggleLocationBtnShow(null);
-                      _tabIndex = 0;
-                      setState(() {});
-                    },
-                    icon: const Icon(Icons.add)),
-                IconButton(
-                    onPressed: () {
                       Fluttertoast.showToast(msg: "位置のリストを表示");
                       Navigator.push(
                           context,

@@ -9,6 +9,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:prevent_ride_pass/AppConstantValues.dart';
 import 'package:prevent_ride_pass/LocationBloc.dart';
 import 'package:prevent_ride_pass/location_event.dart';
 import 'package:prevent_ride_pass/location_state.dart';
@@ -30,7 +31,7 @@ class _MapScreenState extends State<MapScreen> {
   );
   late MapController mapController;
   Position? currentPos;
-  List<Marker> markerList = [];
+  List<Marker> markerList = List.empty(growable: true);
   late StreamSubscription<Position> positionStream;
   late LocationBloc _locationBloc;
   // bool isTracking = true;
@@ -185,6 +186,15 @@ class _MapScreenState extends State<MapScreen> {
               },
             )),
             Positioned(
+                bottom: 10,
+                child: ElevatedButton(
+                  child: Text("Picked"),
+                  onPressed: () {
+                    // isTracking = true;
+                    print(state.pickedLocation);
+                  },
+                )),
+            Positioned(
               bottom: 20,
               right: 20,
               child: FloatingActionButton(
@@ -213,6 +223,39 @@ class _MapScreenState extends State<MapScreen> {
                 },
                 child: const Icon(Icons.add),
               ),
+            ),
+            Positioned(
+              left: 10,
+              top: 10,
+              child: Container(
+                height: 160,
+                width: 160,
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10)),
+                child: SingleChildScrollView(
+                    child: Column(
+                        children: state.activeLocatons.map((item) {
+                  return Column(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 4, horizontal: 8),
+                        child: Text(
+                          item.name,
+                          style: AppConstantValues.s_text,
+                        ),
+                      ),
+                      Divider(
+                        height: 4,
+                        indent: 4,
+                        endIndent: 4,
+                      )
+                    ],
+                  );
+                }).toList())),
+              ),
             )
           ],
         );
@@ -222,11 +265,27 @@ class _MapScreenState extends State<MapScreen> {
 
   void addMarker(LatLng markerPos) {
     Marker marker = Marker(
+        key: GlobalKey(
+            debugLabel: "${markerPos.latitude}${markerPos.longitude}"),
         point: markerPos,
         builder: (context) => Container(
               child: IconButton(
                 icon: const Icon(Icons.location_on),
-                onPressed: () => print("pressed"),
+                onPressed: () {
+                  print("pressed");
+                  for (int i = 0; i < markerList.length; i++) {
+                    Marker m = markerList[i];
+                    if (m.point == markerPos) {
+                      print("equals");
+                      markerList.remove(m);
+                      setState(() {});
+
+                      context
+                          .read<LocationBloc>()
+                          .add(ResetPickedLocationEvent());
+                    }
+                  }
+                },
               ),
             ));
     markerList.add(marker);
@@ -270,7 +329,7 @@ class _MapScreenState extends State<MapScreen> {
         double distance = Geolocator.distanceBetween(currentPos!.latitude,
             currentPos!.longitude, item.latitude, item.longitude);
         print("distance $i: $distance");
-        if (distance <= 100 && (!isRinging && !isStopped)) {
+        if (distance <= 300 && (!isRinging && !isStopped)) {
           AppUtil.notify(
               title: "通知",
               body: "目的地に近づきました。",
