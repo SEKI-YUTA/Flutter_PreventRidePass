@@ -34,7 +34,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   List<Marker> markerList = List.empty(growable: true);
   late StreamSubscription<Position> positionStream;
   late LocationBloc _locationBloc;
-  // bool isTracking = true;
   bool isStopped = false;
   bool isRinging = false;
 
