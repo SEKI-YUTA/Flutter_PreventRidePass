@@ -25,7 +25,7 @@ class MapScreen extends StatefulWidget {
   State<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> {
+class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   final LocationSettings locationSettings = const LocationSettings(
     accuracy: LocationAccuracy.best,
   );
@@ -50,6 +50,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     mapController = widget.mapController;
     print("initState XXXX");
     _locationBloc = BlocProvider.of(context);
@@ -59,6 +60,21 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void dispose() {
     super.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    print("state $state");
+
+    switch (state) {
+      case AppLifecycleState.paused:
+        // ここに位置情報のlistenをフォアグラウンドサービスに移動させる処理を書く
+        break;
+      default:
+        break;
+    }
   }
 
   Future<Position> _determinePosition() async {
